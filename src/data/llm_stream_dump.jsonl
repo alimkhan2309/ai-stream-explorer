@@ -1,0 +1,32 @@
+{"event":"token","data":{"delta":"Давайте построим график выручки по регионам.\n"}}
+{"event":"token","data":{"delta":"Для этого используем столбчатую диаграмму (bar chart).\n"}}
+{"event":"token","data":{"delta":"По оси X будут регионы, по оси Y — сумма выручки.\n\n"}}
+
+{"event":"token","data":{"delta":"Ниже приведён Vega-Lite spec:\n"}}
+{"event":"token","data":{"delta":"```json\n"}}
+
+{"event":"token","data":{"delta":"{\n"}}
+{"event":"token","data":{"delta":"  \"mark\": \"bar\",\n"}}
+{"event":"token","data":{"delta":"  \"encoding\": {\n"}}
+{"event":"token","data":{"delta":"    \"x\": {\n"}}
+{"event":"token","data":{"delta":"      \"field\": \"region\",\n"}}
+{"event":"token","data":{"delta":"      \"type\": \"nominal\",\n"}}
+{"event":"token","data":{"delta":"      \"title\": \"Регион\"\n"}}
+{"event":"token","data":{"delta":"    },\n"}}
+{"event":"token","data":{"delta":"    \"y\": {\n"}}
+{"event":"token","data":{"delta":"      \"aggregate\": \"sum\",\n"}}
+{"event":"token","data":{"delta":"      \"field\": \"revenue\",\n"}}
+{"event":"token","data":{"delta":"      \"type\": \"quantitative\",\n"}}
+{"event":"token","data":{"delta":"      \"title\": \"Выручка\"\n"}}
+{"event":"token","data":{"delta":"    },\n"}}
+{"event":"token","data":{"delta":"    \"tooltip\": [\n"}}
+{"event":"token","data":{"delta":"      { \"field\": \"region\", \"type\": \"nominal\", \"title\": \"Регион\" },\n"}}
+{"event":"token","data":{"delta":"      { \"aggregate\": \"sum\", \"field\": \"revenue\", \"type\": \"quantitative\", \"title\": \"Выручка\" }\n"}}
+{"event":"token","data":{"delta":"    ]\n"}}
+{"event":"token","data":{"delta":"  }\n"}}
+{"event":"token","data":{"delta":"}\n"}}
+
+{"event":"token","data":{"delta":"```\n"}}
+{"event":"token","data":{"delta":"\nГрафик позволит быстро сравнить вклад каждого региона в общую выручку.\n"}}
+
+{"event":"done","data":{"usage":{"input_tokens":142,"output_tokens":389}}}
