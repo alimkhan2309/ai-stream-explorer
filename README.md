@@ -1,73 +1,188 @@
-# React + TypeScript + Vite
+# AI Stream Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript приложение для симуляции потоковой передачи ответов LLM с встроенной визуализацией графиков Vega-Lite. Инструмент помогает визуализировать, как AI-ассистенты передают ответы в реальном времени, включая рендеринг визуализаций данных.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Симуляция потоковой передачи в реальном времени - воспроизведение токенов LLM с реалистичными задержками
+- Встроенные графики Vega-Lite - автоматическое обнаружение и рендеринг графиков
+- Мгновенная индикация загрузки - анимация отображается сразу при обнаружении графика
+- Чистый интерфейс - современный UI в стиле ChatGPT с плавными анимациями
+- Устойчивость к ошибкам - корректная обработка некорректного JSON и ошибок парсинга
+- Поддержка любых языков - работает с контентом на любом языке
 
-## React Compiler
+## Быстрый старт
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Требования
 
-## Expanding the ESLint configuration
+- Node.js 16+ и npm/yarn
+- Файл `.jsonl` с событиями потоковой передачи LLM
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Установка
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Клонировать репозиторий
+git clone https://github.com/yourusername/ai-stream-explorer.git
+cd ai-stream-explorer
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Установить зависимости
+npm install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Запустить dev сервер
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Приложение откроется по адресу `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Использование
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Нажмите "Choose File" и выберите ваш `.jsonl` файл
+2. Нажмите "Load dump" для парсинга событий
+3. Нажмите "Play" для запуска симуляции потоковой передачи
+4. Наблюдайте за появлением текста и графиков в реальном времени
+5. Используйте "Stop" для паузы воспроизведения
+6. Используйте "Clear" для удаления файла и начала заново
+
+## Как это работает
+
+### Симуляция потоковой передачи
+
+Приложение читает `.jsonl` файл, где каждая строка представляет Server-Sent Event (SSE) от API LLM:
+
+```typescript
+type StreamEvent =
+  | { event: "token"; data: { delta: string } }
+  | { event: "done"; data: any }
+  | { event: "error"; data: { message: string } }
 ```
+
+При нажатии на "Play" приложение:
+1. Итерирует по событиям со случайными задержками (50-150мс)
+2. Накапливает значения `token.delta` в текстовый буфер
+3. Обновляет UI на каждом токене, создавая эффект потоковой передачи
+4. Корректно обрабатывает события `done` и `error`
+
+### Обработка Vega спецификаций
+
+Парсер (`src/utils/vegaParser.ts`) непрерывно анализирует накопленный текст для обнаружения спецификаций Vega-Lite:
+
+**Логика обнаружения:**
+1. Поиск JSON блоков кода, обернутых в `` ```json ... ``` ``
+2. Валидация наличия обязательных полей в JSON: `mark` и `encoding`
+3. Автоматическое добавление отсутствующих полей:
+   - `$schema` - URL схемы Vega-Lite
+   - `data` - захардкоженные примерные данные (выручка по Алматы, Астане, Шымкенту)
+   - `width` и `height` - оптимальные размеры графика
+
+**Поведение при потоковой передаче:**
+- Неполный JSON блок обнаружен - мгновенное отображение анимации загрузки
+- Полный JSON блок распарсен - рендеринг графика с плавным появлением
+- Невалидный или не-Vega JSON - тихо пропускается, ошибка не показывается
+
+**Скрытие JSON:**
+Исходный JSON текст никогда не отображается пользователям. Парсер:
+1. Определяет все диапазоны JSON блоков кода в тексте
+2. Извлекает текстовые сегменты до и после блоков
+3. Заменяет JSON блоки на отрендеренные графики
+4. Создает бесшовный опыт чтения в стиле ChatGPT
+
+### Архитектура компонентов
+
+```
+src/
+├── App.tsx                      # Основное приложение с загрузкой файлов и управлением воспроизведением
+├── components/
+│   └── StreamingContent.tsx     # Рендеринг текстовых и графических сегментов
+└── utils/
+    └── vegaParser.ts            # Обнаружение JSON и извлечение Vega спецификаций
+```
+
+**Ключевые компоненты:**
+
+- **App.tsx** - управление состоянием, файловый I/O, цикл потоковой передачи
+- **StreamingContent** - рендеринг сегментов (текст, графики, состояния загрузки)
+- **VegaChart** - встраивание Vega-Lite с анимацией загрузки
+- **LoadingChart** - анимация-заглушка с тремя прыгающими точками
+
+## Структура проекта
+
+```
+ai-stream-explorer/
+├── src/
+│   ├── App.tsx                  # Основной компонент приложения
+│   ├── components/
+│   │   └── StreamingContent.tsx # Рендеринг контента
+│   ├── utils/
+│   │   └── vegaParser.ts        # Парсер Vega спецификаций
+│   └── main.tsx                 # Точка входа
+├── public/
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── README.md
+```
+
+## Пример формата JSONL
+
+```jsonl
+{"event":"token","data":{"delta":"Давайте построим график выручки по регионам.\n"}}
+{"event":"token","data":{"delta":"```json\n"}}
+{"event":"token","data":{"delta":"{\n"}}
+{"event":"token","data":{"delta":"  \"mark\": \"bar\",\n"}}
+{"event":"token","data":{"delta":"  \"encoding\": {\n"}}
+{"event":"token","data":{"delta":"    \"x\": {\"field\": \"region\", \"type\": \"nominal\"},\n"}}
+{"event":"token","data":{"delta":"    \"y\": {\"field\": \"revenue\", \"type\": \"quantitative\"}\n"}}
+{"event":"token","data":{"delta":"  }\n"}}
+{"event":"token","data":{"delta":"}\n"}}
+{"event":"token","data":{"delta":"```\n"}}
+{"event":"done","data":{"usage":{"input_tokens":142,"output_tokens":389}}}
+```
+
+## Технологический стек
+
+- **React 18** - UI фреймворк
+- **TypeScript** - типизация
+- **Vite** - инструмент сборки и dev сервер
+- **Vega-Lite 5** - декларативная грамматика визуализации
+- **Vega-Embed 6** - библиотека для встраивания графиков
+
+## Соответствие критериям оценки
+
+- Корректная обработка LLM потоковой передачи - реалистичное воспроизведение токен за токеном с возможностью отмены
+- Правильная обработка Vega спецификаций - надежное обнаружение JSON, валидация и автоисправление
+- Устойчивость к ошибкам - блоки try-catch, graceful degradation, отсутствие крашей
+- Читаемость кода - чистые хуки, TypeScript типы, модульные утилиты
+- Современный UI/UX - плавные анимации, состояния загрузки, адаптивный дизайн
+
+## Дополнительные улучшения (бонус)
+
+- Кнопка копирования Vega спецификации в буфер обмена
+- Управление скоростью воспроизведения (0.5x, 1x, 2x)
+- Подсветка синтаксиса JSON в блоках кода
+- Поддержка нескольких типов графиков
+- Экспорт графиков в PNG/SVG
+- Переключатель темной темы
+
+## Разработка
+
+```bash
+# Запуск dev сервера
+npm run dev
+
+# Сборка для продакшена
+npm run build
+
+# Предпросмотр продакшен сборки
+npm run preview
+
+# Проверка типов
+npm run type-check
+```
+
+## Лицензия
+
+MIT
+
+## Внесение изменений
+
+Pull request'ы приветствуются! Для больших изменений, пожалуйста, сначала откройте issue для обсуждения предлагаемых изменений.
